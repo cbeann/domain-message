@@ -1,0 +1,59 @@
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Build output
+target/
+build/
+
+# Maven
+.mvn/
+
+# Gradle (if used)
+build/
+.gradle/
+gradle-wrapper.jar
+
+# Java
+*.class
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Testing
+coverage/
+
+# IDE specific
+.idea/
+.project
+.settings/
+.classpath
+
+# Editor directories and files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

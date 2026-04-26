@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据源管理 - 领域事件管理系统</title>
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <link href="https://cdn.bootcdn.net/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            padding: 20px 40px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+        }
+
+        .logo-text {
+            font-size: 22px;
+            font-weight: 700;
+            color: #1a1a2e;
+            letter-spacing: -0.5px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .nav-link {
+            padding: 8px 16px;
+            color: #6c757d;
+            text-decoration: none;
+            border-radius: 6px;
+            transition: all 0.2s;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .nav-link:hover {
+            color: #667eea;
+            background: #f8f9ff;
+        }
+
+        .nav-link.active {
+            color: #667eea;
+            background: #f8f9ff;
+        }
+
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+        }
+
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #6c757d;
+            font-size: 14px;
+        }
+
+        .breadcrumb a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .breadcrumb i {
+            font-size: 12px;
+        }
+
+        .page-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .page-title h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1a1a2e;
+            margin: 0;
+        }
+
+        .page-title i {
+            font-size: 28px;
+            color: #667eea;
+        }
+
+        .content-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            padding: 32px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 12px;
+            border: 1px solid #e9ecef;
+        }
+
+        .table {
+            margin-bottom: 0;
+        }
+
+        .table thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .table thead th {
+            color: white;
+            font-weight: 600;
+            padding: 16px;
+            border: none;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .table tbody td {
+            padding: 16px;
+            vertical-align: middle;
+            border-bottom: 1px solid #e9ecef;
+            font-size: 14px;
+        }
+
+        .table tbody tr {
+            transition: background 0.2s;
+        }
+
+        .table tbody tr:hover {
+            background: #f8f9ff;
+        }
+
+        .btn-sm {
+            padding: 6px 16px;
+            font-size: 13px;
+            border-radius: 6px;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a5a 100%);
+            border: none;
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(238, 90, 90, 0.3);
+        }
+
+        .modal-content {
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+        }
+
+        .modal-header {
+            padding: 24px 24px 16px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1a1a2e;
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .modal-footer {
+            padding: 16px 24px 24px;
+            border-top: 1px solid #e9ecef;
+            gap: 12px;
+        }
+
+        .form-label {
+            font-weight: 500;
+            color: #495057;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .form-control, .form-select {
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 16px 20px;
+            }
+
+            .main-container {
+                padding: 24px 20px;
+            }
+
+            .content-card {
+                padding: 20px;
+            }
+
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 16px;
+            }
+
+            .nav-links {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <a href="index.html" class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-database"></i>
+                </div>
+                <span class="logo-text">领域事件管理系统</span>
+            </a>
+            <div class="nav-links">
+                <a href="/ad_domain" class="nav-link">领域管理</a>
+                <a href="/domain_entity" class="nav-link">实体管理</a>
+                <a href="/domain_datasource" class="nav-link active">数据源管理</a>
+                <a href="/domain_event" class="nav-link">事件管理</a>
+            </div>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <div class="page-header">
+            <div>
+                <div class="breadcrumb">
+                    <a href="index.html">首页</a>
+                    <i class="fas fa-chevron-right"></i>
+                    <span>数据源管理</span>
+                </div>
+                <div class="page-title">
+                    <i class="fas fa-table"></i>
+                    <h1>数据源管理</h1>
+                </div>
+            </div>
+            <button class="btn btn-primary text-white" data-bs-toggle="modal" data-bs-target="#addDataSourceModal">
+                <i class="fas fa-plus"></i>
+                新增数据源
+            </button>
+        </div>
+
+        <div class="content-card">
+            <div class="table-wrapper">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>领域ID</th>
+                            <th>实体ID</th>
+                            <th>数据库名</th>
+                            <th>表名</th>
+                            <th>表类型</th>
+                            <th>实体ID映射字段</th>
+                            <th>描述</th>
+                            <th style="width: 120px;">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="source : ${sources}">
+                            <td th:text="${source.id}"></td>
+                            <td th:text="${source.domainId}"></td>
+                            <td th:text="${source.domainEntityId}"></td>
+                            <td th:text="${source.databaseName}"></td>
+                            <td><strong th:text="${source.tableName}"></strong></td>
+                            <td th:text="${source.tableType}"></td>
+                            <td th:text="${source.entityIdNameMapTableField}"></td>
+                            <td th:text="${source.description}"></td>
+                            <td>
+                                <button class="btn btn-danger btn-sm text-white" th:onclick="'deleteDataSource(' + ${source.id} + ')'">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="addDataSourceModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-plus-circle"></i>
+                        新增数据源
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addDataSourceForm">
+                        <div class="mb-3">
+                            <label class="form-label">领域</label>
+                            <select class="form-select" id="dataSourceDomainId" required>
+                                <option value="">请选择领域</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">实体</label>
+                            <select class="form-select" id="dataSourceEntityId" required disabled>
+                                <option value="">请先选择领域</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">数据库名</label>
+                            <input type="text" class="form-control" id="dataSourceDatabaseName" required placeholder="请输入数据库名">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">表名</label>
+                            <input type="text" class="form-control" id="dataSourceTableName" required placeholder="请输入表名">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">表类型 (0:附表, 1:主表)</label>
+                            <input type="number" class="form-control" id="dataSourceTableType" required placeholder="0或1">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">实体ID映射字段</label>
+                            <input type="text" class="form-control" id="dataSourceEntityIdField" required placeholder="请输入实体ID映射字段">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">描述</label>
+                            <textarea class="form-control" id="dataSourceDescription" rows="3" placeholder="请输入描述"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i>
+                        取消
+                    </button>
+                    <button type="button" class="btn btn-primary text-white" onclick="addDataSource()">
+                        <i class="fas fa-check"></i>
+                        确定
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.bootcdn.net/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#addDataSourceModal').on('show.bs.modal', function () {
+                if ($('#dataSourceDomainId option').length <= 1) {
+                    $.getJSON('/ad_domain/list', function(response) {
+                        if (response.code === 200) {
+                            let domainSelect = $('#dataSourceDomainId');
+                            response.data.forEach(function(item) {
+                                domainSelect.append(new Option(item.name, item.id));
+                            });
+                        }
+                    });
+                }
+            });
+
+            $('#dataSourceDomainId').change(function() {
+                const domainId = $(this).val();
+                const entitySelect = $('#dataSourceEntityId');
+                entitySelect.html('<option value="">请选择实体</option>').prop('disabled', !domainId);
+
+                if (domainId) {
+                    $.getJSON('/domain_entity/domain/' + domainId, function(response) {
+                        if (response.code === 200) {
+                            response.data.forEach(function(item) {
+                                entitySelect.append(new Option(item.entityName, item.id));
+                            });
+                        }
+                    });
+                }
+            });
+        });
+
+        function addDataSource() {
+            const domainId = $('#dataSourceDomainId').val();
+            const entityId = $('#dataSourceEntityId').val();
+            const databaseName = $('#dataSourceDatabaseName').val();
+            const tableName = $('#dataSourceTableName').val();
+            const tableType = $('#dataSourceTableType').val();
+            const entityIdField = $('#dataSourceEntityIdField').val();
+            const description = $('#dataSourceDescription').val();
+
+            if (!domainId || !entityId || !databaseName || !tableName || !tableType || !entityIdField) {
+                alert('请填写完整信息！');
+                return;
+            }
+
+            $.ajax({
+                url: '/domain_datasource/add',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    domainId: domainId,
+                    domainEntityId: entityId,
+                    databaseName: databaseName,
+                    tableName: tableName,
+                    tableType: tableType,
+                    entityIdNameMapTableField: entityIdField,
+                    description: description
+                }),
+                success: function(response) {
+                    if (response.code === 200) {
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('addDataSourceModal'));
+                        modal.hide();
+                        location.reload();
+                    } else {
+                        alert('添加失败：' + response.message);
+                    }
+                },
+                error: function() {
+                    alert('添加失败！');
+                }
+            });
+        }
+
+        function deleteDataSource(id) {
+            if (confirm('确定要删除这个数据源吗？')) {
+                $.ajax({
+                    url: '/domain_datasource/' + id,
+                    type: 'DELETE',
+                    success: function(response) {
+                        if (response.code === 200) {
+                            location.reload();
+                        } else {
+                            alert('删除失败：' + response.message);
+                        }
+                    },
+                    error: function() {
+                        alert('删除失败！');
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html>

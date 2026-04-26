@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.demo.mapper.DomainDataSourceMapper">
+
+    <select id="getAll" resultType="DomainDataSource">
+        SELECT id, domain_id as domainId, domain_entity_id as domainEntityId, database_name as databaseName,
+               table_name as tableName, table_type as tableType, entity_id_name_map_table_field as entityIdNameMapTableField,
+               description, gmt_create as gmtCreate, gmt_modifed as gmtModifed
+        FROM domain_data_source
+    </select>
+
+    <insert id="add" parameterType="DomainDataSource">
+        INSERT INTO domain_data_source (domain_id, domain_entity_id, database_name, table_name, table_type, entity_id_name_map_table_field, description, gmt_create, gmt_modifed)
+        VALUES (#{domainId}, #{domainEntityId}, #{databaseName}, #{tableName}, #{tableType}, #{entityIdNameMapTableField}, #{description}, #{gmtCreate}, #{gmtModifed})
+    </insert>
+
+    <select id="getById" parameterType="Long" resultType="DomainDataSource">
+        SELECT id, domain_id as domainId, domain_entity_id as domainEntityId, database_name as databaseName,
+               table_name as tableName, table_type as tableType, entity_id_name_map_table_field as entityIdNameMapTableField,
+               description, gmt_create as gmtCreate, gmt_modifed as gmtModifed
+        FROM domain_data_source
+        WHERE id = #{id}
+    </select>
+
+    <delete id="delete" parameterType="Long">
+        DELETE FROM domain_data_source WHERE id = #{id}
+    </delete>
+
+    <select id="getByDbTable" resultType="DomainDataSource">
+        SELECT id, domain_id as domainId, domain_entity_id as domainEntityId, database_name as databaseName,
+               table_name as tableName, table_type as tableType, entity_id_name_map_table_field as entityIdNameMapTableField,
+               description, gmt_create as gmtCreate, gmt_modifed as gmtModifed
+        FROM domain_data_source
+        WHERE database_name = #{dbName} AND table_name = #{tbName}
+    </select>
+
+    <select id="getByDomainEntityId" parameterType="Long" resultType="DomainDataSource">
+        SELECT id, domain_id as domainId, domain_entity_id as domainEntityId, database_name as databaseName,
+               table_name as tableName, table_type as tableType, entity_id_name_map_table_field as entityIdNameMapTableField,
+               description, gmt_create as gmtCreate, gmt_modifed as gmtModifed
+        FROM domain_data_source
+        WHERE domain_entity_id = #{domainEntityId}
+    </select>
+
+</mapper>

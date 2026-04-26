@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.demo.mapper.DomainEntityMapper">
+
+    <select id="getAll" resultType="DomainEntity">
+        SELECT id, domain_id as domainId, entity_name as entityName, entity_id_name as entityIdName, description, gmt_create as gmtCreate, gmt_modifed as gmtModifed
+        FROM domain_entity
+    </select>
+
+    <insert id="add" parameterType="DomainEntity">
+        INSERT INTO domain_entity (domain_id, entity_name, entity_id_name, description, gmt_create, gmt_modifed)
+        VALUES (#{domainId}, #{entityName}, #{entityIdName}, #{description}, #{gmtCreate}, #{gmtModifed})
+    </insert>
+
+    <select id="getById" parameterType="Long" resultType="DomainEntity">
+        SELECT id, domain_id as domainId, entity_name as entityName, entity_id_name as entityIdName, description, gmt_create as gmtCreate, gmt_modifed as gmtModifed
+        FROM domain_entity
+        WHERE id = #{id}
+    </select>
+
+    <delete id="delete" parameterType="Long">
+        DELETE FROM domain_entity WHERE id = #{id}
+    </delete>
+
+    <select id="getByDomainId" parameterType="Long" resultType="DomainEntity">
+        SELECT id, domain_id as domainId, entity_name as entityName, entity_id_name as entityIdName, description, gmt_create as gmtCreate, gmt_modifed as gmtModifed
+        FROM domain_entity
+        WHERE domain_id = #{domainId}
+    </select>
+
+</mapper>

@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>领域事件管理系统</title>
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <link href="https://cdn.bootcdn.net/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            padding: 20px 40px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+        }
+
+        .logo-text {
+            font-size: 22px;
+            font-weight: 700;
+            color: #1a1a2e;
+            letter-spacing: -0.5px;
+        }
+
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px;
+        }
+
+        .content-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            padding: 40px;
+            margin-bottom: 32px;
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1a1a2e;
+            margin-bottom: 32px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .section-title i {
+            color: #667eea;
+        }
+
+        .nav-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+
+        .nav-card {
+            background: linear-gradient(135deg, #f8f9ff 0%, #ffffff 100%);
+            border: 1px solid #e9ecef;
+            border-radius: 12px;
+            padding: 28px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .nav-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(102, 126, 234, 0.15);
+            border-color: #667eea;
+        }
+
+        .nav-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .nav-card:nth-child(1) .nav-icon {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .nav-card:nth-child(2) .nav-icon {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .nav-card:nth-child(3) .nav-icon {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+
+        .nav-card:nth-child(4) .nav-icon {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            color: white;
+        }
+
+        .nav-info h4 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1a1a2e;
+            margin-bottom: 4px;
+        }
+
+        .nav-info p {
+            font-size: 14px;
+            color: #6c757d;
+            margin: 0;
+        }
+
+        .selector-section {
+            background: #f8f9ff;
+            border-radius: 12px;
+            padding: 32px;
+            margin-bottom: 32px;
+        }
+
+        .select-wrapper {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+
+        .select-group {
+            flex: 1;
+            min-width: 220px;
+        }
+
+        .select-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: #495057;
+            margin-bottom: 8px;
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 15px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .form-select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-select:disabled {
+            background: #f8f9fa;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 12px;
+            border: 1px solid #e9ecef;
+        }
+
+        .table {
+            margin-bottom: 0;
+        }
+
+        .table thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .table thead th {
+            color: white;
+            font-weight: 600;
+            padding: 16px;
+            border: none;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .table tbody td {
+            padding: 16px;
+            vertical-align: middle;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .table tbody tr {
+            transition: background 0.2s;
+        }
+
+        .table tbody tr:hover {
+            background: #f8f9ff;
+        }
+
+        .filter-tag {
+            display: inline-block;
+            padding: 4px 10px;
+            background: #e9ecef;
+            border-radius: 4px;
+            font-size: 12px;
+            margin: 2px;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 16px 20px;
+            }
+
+            .main-container {
+                padding: 24px 20px;
+            }
+
+            .content-card {
+                padding: 24px;
+            }
+
+            .nav-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .select-wrapper {
+                flex-direction: column;
+            }
+
+            .select-group {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon">
+            <i class="fas fa-database"></i>
+        </div>
+        <span class="logo-text">领域事件管理系统</span>
+    </div>
+</header>
+
+    <div class="main-container">
+        <div class="content-card">
+            <h2 class="section-title">
+                <i class="fas fa-cog"></i>
+                快速导航
+            </h2>
+            <div class="nav-grid">
+                <a href="/ad_domain" class="nav-card">
+                    <div class="nav-icon">
+                        <i class="fas fa-sitemap"></i>
+                    </div>
+                    <div class="nav-info">
+                        <h4>领域管理</h4>
+                        <p>管理业务领域</p>
+                    </div>
+                </a>
+                <a href="/domain_entity" class="nav-card">
+                    <div class="nav-icon">
+                        <i class="fas fa-cube"></i>
+                    </div>
+                    <div class="nav-info">
+                        <h4>实体管理</h4>
+                        <p>管理领域实体</p>
+                    </div>
+                </a>
+                <a href="/domain_datasource" class="nav-card">
+                    <div class="nav-icon">
+                        <i class="fas fa-table"></i>
+                    </div>
+                    <div class="nav-info">
+                        <h4>数据源管理</h4>
+                        <p>管理数据表配置</p>
+                    </div>
+                </a>
+                <a href="/domain_event" class="nav-card">
+                    <div class="nav-icon">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <div class="nav-info">
+                        <h4>领域事件管理</h4>
+                        <p>配置事件规则</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <div class="content-card">
+            <h2 class="section-title">
+                <i class="fas fa-search"></i>
+                事件查询
+            </h2>
+            <div class="selector-section">
+                <div class="select-wrapper">
+                    <div class="select-group">
+                        <label for="level1">请选择领域</label>
+                        <select class="form-select" id="level1">
+                            <option value="">请选择领域</option>
+                        </select>
+                    </div>
+                    <div class="select-group">
+                        <label for="level2">请选择实体</label>
+                        <select class="form-select" id="level2" disabled>
+                            <option value="">请选择领域实体</option>
+                        </select>
+                    </div>
+                    <div class="select-group">
+                        <label for="level3">请选择数据表</label>
+                        <select class="form-select" id="level3" disabled>
+                            <option value="">请选择数据表</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="font-size: 18px; font-weight: 600; color: #1a1a2e; margin-bottom: 20px;">
+                <i class="fas fa-list"></i>
+                领域事件列表
+            </h3>
+            <div class="table-wrapper">
+                <table class="table" id="aList">
+                    <thead>
+                        <tr>
+                            <th>事件名称</th>
+                            <th>事件描述</th>
+                            <th>关注类型</th>
+                            <th>输出TOPIC</th>
+                            <th>可过滤条件</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.bootcdn.net/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $.getJSON('/ad_domain/list', function (response) {
+                if (response.code === 200) {
+                    let level1Select = $('#level1');
+                    response.data.forEach(function (item) {
+                        level1Select.append(new Option(item.name, item.id));
+                    });
+                    level1Select.prop("disabled", false);
+                }
+            });
+
+            $('#level1').change(function () {
+                let selectedId = $(this).val();
+                $('#level2').html('<option value="">请选择领域实体</option>').prop("disabled", true);
+                $('#level3').html('<option value="">请选择数据表</option>').prop("disabled", true);
+                $('#aList tbody').empty();
+                $.getJSON(`/domain_entity/${selectedId}`, function (response) {
+                    if (response.code === 200) {
+                        let level2Select = $('#level2');
+                        response.data.forEach(function (item) {
+                            level2Select.append(new Option(item.entityName, item.id));
+                        });
+                        level2Select.prop("disabled", false);
+                    }
+                });
+            });
+
+            $('#level2').change(function () {
+                let selectedId = $(this).val();
+                $('#level3').html('<option value="">请选择数据表</option>').prop("disabled", true);
+                $('#aList tbody').empty();
+                $.getJSON(`/domain_datasource/${selectedId}`, function (response) {
+                    if (response.code === 200) {
+                        let level3Select = $('#level3');
+                        response.data.forEach(function (item) {
+                            level3Select.append(new Option(item.description, item.id));
+                        });
+                        level3Select.prop("disabled", false);
+                    }
+                });
+            });
+
+            $('#level3').change(function () {
+                let selectedId = $(this).val();
+                $('#aList tbody').empty();
+                $.getJSON(`/domain_event/${selectedId}`, function (response) {
+                    if (response.code === 200) {
+                        let aList = $('#aList tbody');
+                        response.data.forEach(function (item) {
+                            let filterHtml = '';
+                            if (item.domainEventFilterSettingList && item.domainEventFilterSettingList.length > 0) {
+                                item.domainEventFilterSettingList.forEach(function (setting) {
+                                    filterHtml += '<span class="filter-tag">' + setting.key + ': ' + setting.value + '</span>';
+                                });
+                            } else {
+                                filterHtml = '<span style="color: #6c757d;">-</span>';
+                            }
+                            aList.append('<tr><td>' + item.eventName + '</td><td>' + item.description + '</td><td>' + item.eventType + '</td><td>' + item.outputTopic + '</td><td>' + filterHtml + '</td></tr>');
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

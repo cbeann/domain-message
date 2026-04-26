@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <title>三级联动选择器</title>
+    <!-- 引入BootCDN上的jQuery -->
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f4f7fe 0%, #e5e9f2 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        h2,
+        h3 {
+            color: #333;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .select-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        select {
+            width: 200px;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            background-color: #fff;
+            font-size: 16px;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="8"><path d="M0 0l6 8 6-8z" fill="%23777"/></svg>');
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            cursor: pointer;
+            transition: border-color 0.3s ease;
+        }
+
+        select:hover {
+            border-color: #999;
+        }
+
+        select:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        table {
+            width: 620px;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th,
+        td {
+            border: 1px solid #ccc;
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f0f0f0;
+        }
+
+        tr:hover {
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+
+<body>
+
+<h2>请选择：</h2>
+<div class="select-container">
+    <select id="level1">
+        <option value="">请选择一级分类</option>
+    </select>
+
+    <select id="level2" disabled>
+        <option value="">请选择二级分类</option>
+    </select>
+
+    <select id="level3" disabled>
+        <option value="">请选择三级分类</option>
+    </select>
+</div>
+
+<h3>领域事件列表:</h3>
+<table id="aList">
+    <thead>
+    <tr>
+        <th>事件名称</th>
+        <th>事件描述</th>
+        <th>关注类型</th>
+        <th>输出TOPIC</th>
+        <th>可过滤条件</th>
+    </tr>
+    </thead>
+    <tbody>
+    <!-- A接口返回的数据将在这里显示 -->
+    </tbody>
+</table>
+
+<script>
+    $(document).ready(function () {
+        // 加载一级分类
+        $.getJSON('http://localhost:8080/ad_domain', function (response) {
+            if (response.code === 200) {
+                let level1Select = $('#level1');
+                response.data.forEach(function (item) {
+                    level1Select.append(new Option(item.name, item.id));
+                });
+                level1Select.prop("disabled", false);
+            }
+        });
+
+        // 当一级分类改变时，加载对应的二级分类
+        $('#level1').change(function () {
+            let selectedId = $(this).val();
+            $('#level2').html('<option value="">请选择二级分类</option>').prop("disabled", true);
+            $('#level3').html('<option value="">请选择三级分类</option>').prop("disabled", true);
+            $.getJSON(`http://localhost:8080/domain_entity/${selectedId}`, function (response) {
+                if (response.code === 200) {
+                    let level2Select = $('#level2');
+                    response.data.forEach(function (item) {
+                        level2Select.append(new Option(item.entityName, item.id));
+                    });
+                    level2Select.prop("disabled", false);
+                }
+            });
+        });
+
+        // 当二级分类改变时，加载对应的三级分类
+        $('#level2').change(function () {
+            let selectedId = $(this).val();
+            $('#level3').html('<option value="">请选择三级分类</option>').prop("disabled", true);
+            $.getJSON(`http://localhost:8080/domain_datasource/${selectedId}`, function (response) {
+                if (response.code === 200) {
+                    let level3Select = $('#level3');
+                    response.data.forEach(function (item) {
+                        level3Select.append(new Option(item.description, item.id));
+                    });
+                    level3Select.prop("disabled", false);
+                }
+            });
+        });
+
+        // 当三级分类改变时，调用A接口并展示数据
+        $('#level3').change(function () {
+            let selectedId = $(this).val();
+            $('#aList tbody').empty(); // 清空之前的结果
+            $.getJSON(`http://localhost:8080/domain_event/${selectedId}`, function (response) {
+                if (response.code === 200) {
+                    let aList = $('#aList tbody');
+                    response.data.forEach(function (item) {
+                        let filterSettings = '';
+                        if (item.domainEventFilterSettingList && item.domainEventFilterSettingList.length > 0) {
+                            item.domainEventFilterSettingList.forEach(function (setting, index) {
+                                filterSettings += `${setting.key}: ${setting.value}`;
+                                if (index < item.domainEventFilterSettingList.length - 1) {
+                                    filterSettings += ', ';
+                                }
+                            });
+                        }
+                        aList.append(`<tr>
+                                <td>${item.eventName}</td>
+                                <td>${item.description}</td>
+                                <td>${item.eventType}</td>
+                                <td>${item.outputTopic}</td>
+                                <td>${filterSettings}</td>
+                            </tr>`);
+                    });
+                }
+            });
+        });
+    });
+</script>
+
+</body>
+
+</html>

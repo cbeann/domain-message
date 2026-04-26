@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.demo.mapper.DomainEventFilterSettingMapper">
+
+    <select id="getByEventId" parameterType="Long" resultType="DomainEventFilterSetting">
+        SELECT id, event_id as eventId, filter_key as filterKey, filter_value as filterValue
+        FROM domain_event_filter_setting
+        WHERE event_id = #{eventId}
+    </select>
+
+    <insert id="add" parameterType="DomainEventFilterSetting">
+        INSERT INTO domain_event_filter_setting (event_id, filter_key, filter_value)
+        VALUES (#{eventId}, #{filterKey}, #{filterValue})
+    </insert>
+
+    <delete id="deleteByEventId" parameterType="Long">
+        DELETE FROM domain_event_filter_setting WHERE event_id = #{eventId}
+    </delete>
+
+</mapper>

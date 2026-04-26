@@ -1,0 +1,1148 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>消息编排</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        #app {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: #1a1a2e;
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            color: #1a1a2e;
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff5252 100%);
+            color: white;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+        
+        /* Main Layout */
+        .main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+        
+        /* Left Sidebar */
+        .sidebar {
+            width: 280px;
+            background: #16213e;
+            padding: 20px;
+            border-right: 1px solid #2a2a4a;
+            overflow-y: auto;
+        }
+        
+        .sidebar-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #a0a0a0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .node-palette {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .palette-item {
+            background: #1a1a2e;
+            border: 2px solid #2a2a4a;
+            border-radius: 12px;
+            padding: 15px;
+            cursor: grab;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .palette-item:hover {
+            border-color: #667eea;
+            transform: translateX(5px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .palette-item:active {
+            cursor: grabbing;
+        }
+        
+        .palette-icon {
+            width: 45px;
+            height: 45px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        
+        .palette-icon.receiver {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .palette-icon.transformer {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        
+        .palette-icon.ratelimiter {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .palette-icon.output {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+        
+        .palette-info h3 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .palette-info p {
+            font-size: 12px;
+            color: #888;
+        }
+        
+        /* Canvas Area */
+        .canvas-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            background: #1a1a2e;
+            background-image: 
+                radial-gradient(circle, #2a2a4a 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        
+        .canvas {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+        
+        /* SVG Connections */
+        .connections-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: auto;
+            z-index: 1;
+        }
+        
+        .connection-line {
+            fill: none;
+            stroke: #667eea;
+            stroke-width: 3;
+            marker-end: url(#arrowhead);
+        }
+        
+        .connection-line.temp {
+            stroke: #667eea;
+            opacity: 0.7;
+            pointer-events: none;
+        }
+        
+        .connection-line:hover {
+            stroke: #4facfe;
+            stroke-width: 4;
+        }
+        
+        /* Nodes */
+        .canvas-node {
+            position: absolute;
+            background: #16213e;
+            border: 2px solid #2a2a4a;
+            border-radius: 12px;
+            min-width: 180px;
+            cursor: move;
+            z-index: 10;
+            transition: box-shadow 0.3s ease, border-color 0.3s ease;
+            user-select: none;
+        }
+        
+        .canvas-node:hover {
+            border-color: #667eea;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .canvas-node.selected {
+            border-color: #4facfe;
+            box-shadow: 0 0 25px rgba(79, 172, 254, 0.5);
+        }
+        
+        .canvas-node.configured {
+            border-color: #43e97b;
+        }
+        
+        .canvas-node.configured::after {
+            content: '';
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            width: 16px;
+            height: 16px;
+            background: #43e97b;
+            border-radius: 50%;
+            border: 2px solid #1a1a2e;
+        }
+        
+        .node-header {
+            padding: 12px 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid #2a2a4a;
+        }
+        
+        .node-icon {
+            width: 35px;
+            height: 35px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+        
+        .node-icon.receiver {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .node-icon.transformer {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        
+        .node-icon.ratelimiter {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .node-icon.output {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+        
+        .node-title {
+            font-size: 14px;
+            font-weight: 600;
+            flex: 1;
+        }
+        
+        .node-delete {
+            width: 24px;
+            height: 24px;
+            border: none;
+            background: transparent;
+            color: #888;
+            cursor: pointer;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            margin-left: auto;
+        }
+        
+        .node-delete:hover {
+            background: rgba(255, 107, 107, 0.2);
+            color: #ff6b6b;
+        }
+        
+        .node-body {
+            padding: 10px 15px;
+            font-size: 12px;
+            color: #888;
+        }
+        
+        /* Ports */
+        .node-ports {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        
+        .node-ports.left {
+            left: -8px;
+        }
+        
+        .node-ports.right {
+            right: -8px;
+        }
+        
+        .port {
+            width: 16px;
+            height: 16px;
+            background: #2a2a4a;
+            border: 2px solid #667eea;
+            border-radius: 50%;
+            cursor: crosshair;
+            transition: all 0.3s ease;
+        }
+        
+        .port:hover {
+            background: #667eea;
+            transform: scale(1.3);
+        }
+        
+        .port.input {
+            margin-bottom: 10px;
+        }
+        
+        .port.output {
+            margin-top: 10px;
+        }
+        
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .modal-content {
+            background: #16213e;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow: hidden;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+        
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+        
+        .modal-header {
+            padding: 20px 25px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            border-bottom: 1px solid #2a2a4a;
+        }
+        
+        .modal-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+        
+        .modal-icon.receiver {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .modal-icon.transformer {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        
+        .modal-icon.ratelimiter {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .modal-icon.output {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        }
+        
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .modal-body {
+            padding: 25px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: #aaa;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            background: #1a1a2e;
+            border: 2px solid #2a2a4a;
+            border-radius: 8px;
+            color: #eee;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .form-control::placeholder {
+            color: #666;
+        }
+        
+        textarea.form-control {
+            min-height: 120px;
+            resize: vertical;
+        }
+        
+        .modal-footer {
+            padding: 20px 25px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+            border-top: 1px solid #2a2a4a;
+        }
+        
+        /* Table for Transformer */
+        .config-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        
+        .config-table th,
+        .config-table td {
+            padding: 10px;
+            text-align: left;
+            border: 1px solid #2a2a4a;
+        }
+        
+        .config-table th {
+            background: #1a1a2e;
+            font-weight: 600;
+            font-size: 13px;
+            color: #aaa;
+        }
+        
+        .config-table td {
+            font-size: 13px;
+        }
+        
+        .config-table input,
+        .config-table select {
+            width: 100%;
+            padding: 8px 10px;
+            background: #1a1a2e;
+            border: 1px solid #2a2a4a;
+            border-radius: 4px;
+            color: #eee;
+            font-size: 13px;
+        }
+        
+        .config-table input:focus,
+        .config-table select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+        
+        /* Empty State */
+        .empty-state {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: #666;
+        }
+        
+        .empty-state i {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+        
+        .empty-state h3 {
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+        
+        .empty-state p {
+            font-size: 14px;
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #1a1a2e;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #2a2a4a;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3a3a5a;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <header class="header">
+            <h1><i class="fas fa-project-diagram"></i> 消息编排</h1>
+            <div class="header-actions">
+                <button class="btn btn-success" @click="savePipeline">
+                    <i class="fas fa-save"></i> 保存
+                </button>
+                <button class="btn btn-danger" @click="clearCanvas">
+                    <i class="fas fa-trash"></i> 清空
+                </button>
+            </div>
+        </header>
+        
+        <div class="main-container">
+            <aside class="sidebar">
+                <h2 class="sidebar-title">节点组件</h2>
+                <div class="node-palette">
+                    <div class="palette-item" 
+                         v-for="nodeType in nodeTypes" 
+                         :key="nodeType.type"
+                         draggable="true"
+                         @dragstart="onDragStart($event, nodeType)">
+                        <div class="palette-icon" :class="nodeType.type">
+                            <i :class="nodeType.icon"></i>
+                        </div>
+                        <div class="palette-info">
+                            <h3>{{ nodeType.name }}</h3>
+                            <p>{{ nodeType.description }}</p>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+            
+            <div class="canvas-container"
+                 @drop="onDrop"
+                 @dragover.prevent
+                 @click="onCanvasClick">
+                <div class="canvas" ref="canvas">
+                    <svg class="connections-layer" ref="svgLayer" @mousemove="onConnectMove">
+                        <defs>
+                            <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                                <polygon points="0 0, 10 3.5, 0 7" fill="#667eea"/>
+                            </marker>
+                        </defs>
+                        <path v-for="conn in connections" 
+                              :key="conn.id"
+                              class="connection-line"
+                              :d="getConnectionPath(conn)"/>
+                        <path v-if="tempConnection"
+                              class="connection-line temp"
+                              :d="tempConnection.path"
+                              stroke-dasharray="5,5"/>
+                    </svg>
+                    
+                    <div v-if="nodes.length === 0" class="empty-state">
+                        <i class="fas fa-puzzle-piece"></i>
+                        <h3>拖拽节点开始编排</h3>
+                        <p>从左侧面板拖拽节点到画布中</p>
+                    </div>
+                    
+                    <div v-for="node in nodes"
+                         :key="node.id"
+                         class="canvas-node"
+                         :class="{ selected: selectedNode?.id === node.id, configured: node.config }"
+                         :style="{ left: node.x + 'px', top: node.y + 'px' }"
+                         @click.stop="selectNode(node)"
+                         @mousedown="startDrag($event, node)">
+                        <div class="node-header">
+                            <div class="node-icon" :class="node.type">
+                                <i :class="getNodeIcon(node.type)"></i>
+                            </div>
+                            <span class="node-title">{{ getNodeName(node.type) }}</span>
+                            <button class="node-delete" @click.stop="deleteNode(node.id)" title="删除节点">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="node-body">
+                            {{ getNodeDescription(node) }}
+                        </div>
+                        <div class="node-ports left" v-if="node.type !== 'receiver'">
+                            <div class="port input" @mousedown.stop="startConnection($event, node, 'input')" @mouseup.stop="endConnection(node, 'input')"></div>
+                        </div>
+                        <div class="node-ports right" v-if="node.type !== 'output'">
+                            <div class="port output" @mousedown.stop="startConnection($event, node, 'output')"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Receiver Modal -->
+        <div class="modal-overlay" :class="{ active: modalType === 'receiver' }" @click.self="closeModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-icon receiver">
+                        <i class="fas fa-inbox"></i>
+                    </div>
+                    <h2 class="modal-title">消息接收器配置</h2>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label">消息 TOPIC</label>
+                        <input type="text" class="form-control" v-model="nodeConfig.topic" placeholder="请输入消息 TOPIC">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">消息 TAG</label>
+                        <input type="text" class="form-control" v-model="nodeConfig.tag" placeholder="请输入消息 TAG">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">解析方式</label>
+                        <select class="form-control" v-model="nodeConfig.parseType">
+                            <option value="json">JSON</option>
+                            <option value="delimiter">分隔符</option>
+                        </select>
+                    </div>
+                    <div class="form-group" v-if="nodeConfig.parseType === 'delimiter'">
+                        <label class="form-label">分隔符字符串</label>
+                        <input type="text" class="form-control" v-model="nodeConfig.delimiter" placeholder="请输入分隔符">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn" style="background: #2a2a4a; color: #eee;" @click="closeModal">取消</button>
+                    <button class="btn btn-primary" @click="saveConfig">保存</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Transformer Modal -->
+        <div class="modal-overlay" :class="{ active: modalType === 'transformer' }" @click.self="closeModal">
+            <div class="modal-content" style="max-width: 700px;">
+                <div class="modal-header">
+                    <div class="modal-icon transformer">
+                        <i class="fas fa-exchange-alt"></i>
+                    </div>
+                    <h2 class="modal-title">转换器配置</h2>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label">输出字段配置</label>
+                        <table class="config-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 30%;">对象名称</th>
+                                    <th style="width: 20%;">对象类型</th>
+                                    <th style="width: 40%;">取值表达式</th>
+                                    <th style="width: 10%;">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="(field, index) in nodeConfig.fields" :key="index">
+                                    <td>
+                                        <input type="text" v-model="field.name" placeholder="对象名称">
+                                    </td>
+                                    <td>
+                                        <select v-model="field.type">
+                                            <option value="Long">Long</option>
+                                            <option value="String">String</option>
+                                            <option value="Integer">Integer</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input type="text" v-model="field.expression" placeholder="取值表达式">
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-danger btn-sm" @click="removeField(index)">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <button class="btn btn-primary btn-sm mt-2" @click="addField" style="margin-top: 10px;">
+                            <i class="fas fa-plus"></i> 添加字段
+                        </button>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn" style="background: #2a2a4a; color: #eee;" @click="closeModal">取消</button>
+                    <button class="btn btn-primary" @click="saveConfig">保存</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Rate Limiter Modal -->
+        <div class="modal-overlay" :class="{ active: modalType === 'ratelimiter' }" @click.self="closeModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-icon ratelimiter">
+                        <i class="fas fa-tachometer-alt"></i>
+                    </div>
+                    <h2 class="modal-title">限流器配置</h2>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label">限流模式</label>
+                        <select class="form-control" v-model="nodeConfig.mode">
+                            <option value="token">令牌桶</option>
+                            <option value="leaky">漏桶</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">每秒处理数量</label>
+                        <input type="number" class="form-control" v-model="nodeConfig.rate" placeholder="请输入每秒处理数量">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">突发容量</label>
+                        <input type="number" class="form-control" v-model="nodeConfig.burst" placeholder="请输入突发容量">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn" style="background: #2a2a4a; color: #eee;" @click="closeModal">取消</button>
+                    <button class="btn btn-primary" @click="saveConfig">保存</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Output Modal -->
+        <div class="modal-overlay" :class="{ active: modalType === 'output' }" @click.self="closeModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div class="modal-icon output">
+                        <i class="fas fa-paper-plane"></i>
+                    </div>
+                    <h2 class="modal-title">消息输出器配置</h2>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label">输出目标</label>
+                        <select class="form-control" v-model="nodeConfig.target">
+                            <option value="rocketmq">RocketMQ</option>
+                            <option value="kafka">Kafka</option>
+                            <option value="rabbitmq">RabbitMQ</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">目标 Topic</label>
+                        <input type="text" class="form-control" v-model="nodeConfig.targetTopic" placeholder="请输入目标 Topic">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">目标 Tag</label>
+                        <input type="text" class="form-control" v-model="nodeConfig.targetTag" placeholder="请输入目标 Tag">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn" style="background: #2a2a4a; color: #eee;" @click="closeModal">取消</button>
+                    <button class="btn btn-primary" @click="saveConfig">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const { createApp, ref, reactive, onMounted, onUnmounted } = Vue;
+        
+        createApp({
+            setup() {
+                const canvas = ref(null);
+                const svgLayer = ref(null);
+                const nodeTypes = ref([
+                    { 
+                        type: 'receiver', 
+                        name: '消息接收器', 
+                        icon: 'fas fa-inbox',
+                        description: '接收外部消息'
+                    },
+                    { 
+                        type: 'transformer', 
+                        name: '转换器', 
+                        icon: 'fas fa-exchange-alt',
+                        description: '消息格式转换'
+                    },
+                    { 
+                        type: 'ratelimiter', 
+                        name: '限流器', 
+                        icon: 'fas fa-tachometer-alt',
+                        description: '流量控制'
+                    },
+                    { 
+                        type: 'output', 
+                        name: '消息输出器', 
+                        icon: 'fas fa-paper-plane',
+                        description: '输出到目标'
+                    }
+                ]);
+                
+                const nodes = ref([]);
+                const connections = ref([]);
+                const selectedNode = ref(null);
+                const modalType = ref('');
+                const nodeConfig = reactive({});
+                const draggingNode = ref(null);
+                const dragOffset = ref({ x: 0, y: 0 });
+                const isDragging = ref(false);
+                const connectingFrom = ref(null);
+                const tempConnection = ref(null);
+                
+                let nodeIdCounter = 0;
+                let connectionIdCounter = 0;
+                
+                const getNodeIcon = (type) => {
+                    const icons = {
+                        receiver: 'fas fa-inbox',
+                        transformer: 'fas fa-exchange-alt',
+                        ratelimiter: 'fas fa-tachometer-alt',
+                        output: 'fas fa-paper-plane'
+                    };
+                    return icons[type] || 'fas fa-circle';
+                };
+                
+                const getNodeName = (type) => {
+                    const names = {
+                        receiver: '消息接收器',
+                        transformer: '转换器',
+                        ratelimiter: '限流器',
+                        output: '消息输出器'
+                    };
+                    return names[type] || type;
+                };
+                
+                const getNodeDescription = (node) => {
+                    if (!node.config) return '未配置';
+                    switch (node.type) {
+                        case 'receiver':
+                            return `Topic: ${node.config.topic || '-'}`;
+                        case 'transformer':
+                            return `字段: ${node.config.fields?.length || 0}个`;
+                        case 'ratelimiter':
+                            return `速率: ${node.config.rate || 0}/s`;
+                        case 'output':
+                            return `目标: ${node.config.target || '-'}`;
+                        default:
+                            return '已配置';
+                    }
+                };
+                
+                const onDragStart = (event, nodeType) => {
+                    event.dataTransfer.setData('nodeType', nodeType.type);
+                };
+                
+                const onDrop = (event) => {
+                    const type = event.dataTransfer.getData('nodeType');
+                    if (!type) return;
+                    
+                    const rect = canvas.value.getBoundingClientRect();
+                    const x = event.clientX - rect.left - 90;
+                    const y = event.clientY - rect.top - 40;
+                    
+                    const newNode = {
+                        id: ++nodeIdCounter,
+                        type: type,
+                        x: Math.max(0, x),
+                        y: Math.max(0, y),
+                        config: null
+                    };
+                    
+                    nodes.value.push(newNode);
+                };
+                
+                const selectNode = (node) => {
+                    selectedNode.value = node;
+                    openModal(node.type);
+                };
+                
+                const onCanvasClick = () => {
+                    selectedNode.value = null;
+                    closeModal();
+                };
+                
+                const openModal = (type) => {
+                    modalType.value = type;
+                    Object.keys(nodeConfig).forEach(key => delete nodeConfig[key]);
+                    
+                    if (selectedNode.value?.config) {
+                        Object.assign(nodeConfig, JSON.parse(JSON.stringify(selectedNode.value.config)));
+                    } else {
+                        switch (type) {
+                            case 'receiver':
+                                nodeConfig.topic = '';
+                                nodeConfig.tag = '';
+                                nodeConfig.parseType = 'json';
+                                nodeConfig.delimiter = '';
+                                break;
+                            case 'transformer':
+                                nodeConfig.fields = [{ name: '', type: 'Long', expression: '' }];
+                                break;
+                            case 'ratelimiter':
+                                nodeConfig.mode = 'token';
+                                nodeConfig.rate = 100;
+                                nodeConfig.burst = 50;
+                                break;
+                            case 'output':
+                                nodeConfig.target = 'rocketmq';
+                                nodeConfig.targetTopic = '';
+                                nodeConfig.targetTag = '';
+                                break;
+                        }
+                    }
+                };
+                
+                const closeModal = () => {
+                    modalType.value = '';
+                };
+                
+                const saveConfig = () => {
+                    if (selectedNode.value) {
+                        selectedNode.value.config = JSON.parse(JSON.stringify(nodeConfig));
+                    }
+                    closeModal();
+                };
+                
+                const addField = () => {
+                    if (!nodeConfig.fields) nodeConfig.fields = [];
+                    nodeConfig.fields.push({ name: '', type: 'Long', expression: '' });
+                };
+                
+                const removeField = (index) => {
+                    nodeConfig.fields.splice(index, 1);
+                };
+                
+                const startDrag = (event, node) => {
+                    draggingNode.value = node;
+                    isDragging.value = true;
+                    const rect = event.target.closest('.canvas-node').getBoundingClientRect();
+                    dragOffset.value = {
+                        x: event.clientX - rect.left,
+                        y: event.clientY - rect.top
+                    };
+                    
+                    document.addEventListener('mousemove', onDrag);
+                    document.addEventListener('mouseup', stopDrag);
+                };
+                
+                const onDrag = (event) => {
+                    if (!isDragging.value || !draggingNode.value) return;
+                    
+                    const canvasRect = canvas.value.getBoundingClientRect();
+                    let x = event.clientX - canvasRect.left - dragOffset.value.x;
+                    let y = event.clientY - canvasRect.top - dragOffset.value.y;
+                    
+                    x = Math.max(0, Math.min(x, canvasRect.width - 180));
+                    y = Math.max(0, Math.min(y, canvasRect.height - 80));
+                    
+                    draggingNode.value.x = x;
+                    draggingNode.value.y = y;
+                };
+                
+                const stopDrag = () => {
+                    isDragging.value = false;
+                    draggingNode.value = null;
+                    document.removeEventListener('mousemove', onDrag);
+                    document.removeEventListener('mouseup', stopDrag);
+                };
+                
+                const startConnection = (event, node, portType) => {
+                    connectingFrom.value = { node, portType, startX: event.clientX, startY: event.clientY };
+                };
+                
+                const onConnectMove = (event) => {
+                    if (!connectingFrom.value) return;
+                    
+                    const canvasRect = canvas.value.getBoundingClientRect();
+                    const x = event.clientX - canvasRect.left;
+                    const y = event.clientY - canvasRect.top;
+                    
+                    const fromNode = connectingFrom.value.node;
+                    const x1 = fromNode.x + 180;
+                    const y1 = fromNode.y + 50;
+                    const midX = (x1 + x) / 2;
+                    
+                    tempConnection.value = {
+                        path: `M ${x1} ${y1} C ${midX} ${y1}, ${midX} ${y}, ${x} ${y}`
+                    };
+                };
+                
+                const endConnection = (targetNode, portType) => {
+                    if (!connectingFrom.value) return;
+                    
+                    if (portType === 'input' && connectingFrom.value.portType === 'output') {
+                        const fromNode = connectingFrom.value.node;
+                        const toNode = targetNode;
+                        
+                        if (fromNode.id !== toNode.id) {
+                            const existingConn = connections.value.find(
+                                c => c.from === fromNode.id && c.to === toNode.id
+                            );
+                            if (!existingConn) {
+                                connections.value.push({
+                                    id: ++connectionIdCounter,
+                                    from: fromNode.id,
+                                    to: toNode.id
+                                });
+                            }
+                        }
+                    }
+                    
+                    connectingFrom.value = null;
+                    tempConnection.value = null;
+                };
+                
+                const getConnectionPath = (conn) => {
+                    const fromNode = nodes.value.find(n => n.id === conn.from);
+                    const toNode = nodes.value.find(n => n.id === conn.to);
+                    if (!fromNode || !toNode) return '';
+                    
+                    const x1 = fromNode.x + 180;
+                    const y1 = fromNode.y + 50;
+                    const x2 = toNode.x;
+                    const y2 = toNode.y + 50;
+                    
+                    const midX = (x1 + x2) / 2;
+                    return `M ${x1} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${x2} ${y2}`;
+                };
+                
+                const savePipeline = () => {
+                    const pipeline = {
+                        nodes: nodes.value,
+                        connections: connections.value
+                    };
+                    console.log('保存编排:', JSON.stringify(pipeline, null, 2));
+                    alert('编排已保存！');
+                };
+                
+                const clearCanvas = () => {
+                    nodes.value = [];
+                    connections.value = [];
+                };
+                
+                const deleteNode = (nodeId) => {
+                    nodes.value = nodes.value.filter(n => n.id !== nodeId);
+                    connections.value = connections.value.filter(c => c.from !== nodeId && c.to !== nodeId);
+                };
+                
+                return {
+                    canvas,
+                    svgLayer,
+                    nodeTypes,
+                    nodes,
+                    connections,
+                    selectedNode,
+                    modalType,
+                    nodeConfig,
+                    getNodeIcon,
+                    getNodeName,
+                    getNodeDescription,
+                    onDragStart,
+                    onDrop,
+                    selectNode,
+                    onCanvasClick,
+                    openModal,
+                    closeModal,
+                    saveConfig,
+                    addField,
+                    removeField,
+                    startDrag,
+                    startConnection,
+                    onConnectMove,
+                    endConnection,
+                    getConnectionPath,
+                    savePipeline,
+                    clearCanvas,
+                    deleteNode
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

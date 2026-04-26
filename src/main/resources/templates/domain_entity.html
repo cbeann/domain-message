@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>实体管理 - 领域事件管理系统</title>
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <link href="https://cdn.bootcdn.net/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            padding: 20px 40px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+        }
+
+        .logo-text {
+            font-size: 22px;
+            font-weight: 700;
+            color: #1a1a2e;
+            letter-spacing: -0.5px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .nav-link {
+            padding: 8px 16px;
+            color: #6c757d;
+            text-decoration: none;
+            border-radius: 6px;
+            transition: all 0.2s;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .nav-link:hover {
+            color: #667eea;
+            background: #f8f9ff;
+        }
+
+        .nav-link.active {
+            color: #667eea;
+            background: #f8f9ff;
+        }
+
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+        }
+
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #6c757d;
+            font-size: 14px;
+        }
+
+        .breadcrumb a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .breadcrumb i {
+            font-size: 12px;
+        }
+
+        .page-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .page-title h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1a1a2e;
+            margin: 0;
+        }
+
+        .page-title i {
+            font-size: 28px;
+            color: #667eea;
+        }
+
+        .content-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            padding: 32px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 12px;
+            border: 1px solid #e9ecef;
+        }
+
+        .table {
+            margin-bottom: 0;
+        }
+
+        .table thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .table thead th {
+            color: white;
+            font-weight: 600;
+            padding: 16px;
+            border: none;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .table tbody td {
+            padding: 16px;
+            vertical-align: middle;
+            border-bottom: 1px solid #e9ecef;
+            font-size: 14px;
+        }
+
+        .table tbody tr {
+            transition: background 0.2s;
+        }
+
+        .table tbody tr:hover {
+            background: #f8f9ff;
+        }
+
+        .btn-sm {
+            padding: 6px 16px;
+            font-size: 13px;
+            border-radius: 6px;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a5a 100%);
+            border: none;
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(238, 90, 90, 0.3);
+        }
+
+        .modal-content {
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+        }
+
+        .modal-header {
+            padding: 24px 24px 16px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1a1a2e;
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .modal-footer {
+            padding: 16px 24px 24px;
+            border-top: 1px solid #e9ecef;
+            gap: 12px;
+        }
+
+        .form-label {
+            font-weight: 500;
+            color: #495057;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .form-control, .form-select {
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                padding: 16px 20px;
+            }
+
+            .main-container {
+                padding: 24px 20px;
+            }
+
+            .content-card {
+                padding: 20px;
+            }
+
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 16px;
+            }
+
+            .nav-links {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <a href="index.html" class="logo">
+                <div class="logo-icon">
+                    <i class="fas fa-database"></i>
+                </div>
+                <span class="logo-text">领域事件管理系统</span>
+            </a>
+            <div class="nav-links">
+                <a href="/ad_domain" class="nav-link">领域管理</a>
+                <a href="/domain_entity" class="nav-link active">实体管理</a>
+                <a href="/domain_datasource" class="nav-link">数据源管理</a>
+                <a href="/domain_event" class="nav-link">事件管理</a>
+            </div>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <div class="page-header">
+            <div>
+                <div class="breadcrumb">
+                    <a href="index.html">首页</a>
+                    <i class="fas fa-chevron-right"></i>
+                    <span>实体管理</span>
+                </div>
+                <div class="page-title">
+                    <i class="fas fa-cube"></i>
+                    <h1>实体管理</h1>
+                </div>
+            </div>
+            <button class="btn btn-primary text-white" data-bs-toggle="modal" data-bs-target="#addEntityModal">
+                <i class="fas fa-plus"></i>
+                新增实体
+            </button>
+        </div>
+
+        <div class="content-card">
+            <div class="table-wrapper">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>领域ID</th>
+                            <th>实体名称</th>
+                            <th>实体ID字段名</th>
+                            <th>描述</th>
+                            <th style="width: 120px;">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="entity : ${entities}">
+                            <td th:text="${entity.id}"></td>
+                            <td th:text="${entity.domainId}"></td>
+                            <td><strong th:text="${entity.entityName}"></strong></td>
+                            <td th:text="${entity.entityIdName}"></td>
+                            <td th:text="${entity.description}"></td>
+                            <td>
+                                <button class="btn btn-danger btn-sm text-white" th:onclick="'deleteEntity(' + ${entity.id} + ')'">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="addEntityModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-plus-circle"></i>
+                        新增实体
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addEntityForm">
+                        <div class="mb-3">
+                            <label class="form-label">领域</label>
+                            <select class="form-select" id="entityDomainId" required>
+                                <option value="">请选择领域</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">实体名称</label>
+                            <input type="text" class="form-control" id="entityName" required placeholder="请输入实体名称">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">实体ID字段名</label>
+                            <input type="text" class="form-control" id="entityIdName" required placeholder="请输入实体ID字段名">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">描述</label>
+                            <textarea class="form-control" id="entityDescription" rows="3" placeholder="请输入描述"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i>
+                        取消
+                    </button>
+                    <button type="button" class="btn btn-primary text-white" onclick="addEntity()">
+                        <i class="fas fa-check"></i>
+                        确定
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.bootcdn.net/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#addEntityModal').on('show.bs.modal', function () {
+                if ($('#entityDomainId option').length <= 1) {
+                    $.getJSON('/ad_domain/list', function(response) {
+                        if (response.code === 200) {
+                            let domainSelect = $('#entityDomainId');
+                            response.data.forEach(function(item) {
+                                domainSelect.append(new Option(item.name, item.id));
+                            });
+                        }
+                    });
+                }
+            });
+        });
+
+        function addEntity() {
+            const domainId = $('#entityDomainId').val();
+            const entityName = $('#entityName').val();
+            const entityIdName = $('#entityIdName').val();
+            const description = $('#entityDescription').val();
+            
+            if (!domainId || !entityName || !entityIdName) {
+                alert('请填写完整信息！');
+                return;
+            }
+            
+            $.ajax({
+                url: '/domain_entity/add',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ domainId: domainId, entityName: entityName, entityIdName: entityIdName, description: description }),
+                success: function(response) {
+                    if (response.code === 200) {
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('addEntityModal'));
+                        modal.hide();
+                        location.reload();
+                    } else {
+                        alert('添加失败：' + response.message);
+                    }
+                },
+                error: function() {
+                    alert('添加失败！');
+                }
+            });
+        }
+
+        function deleteEntity(id) {
+            if (confirm('确定要删除这个实体吗？')) {
+                $.ajax({
+                    url: '/domain_entity/' + id,
+                    type: 'DELETE',
+                    success: function(response) {
+                        if (response.code === 200) {
+                            location.reload();
+                        } else {
+                            alert('删除失败：' + response.message);
+                        }
+                    },
+                    error: function() {
+                        alert('删除失败！');
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html>

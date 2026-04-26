@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.demo.mapper.DomainEventMapper">
+
+    <resultMap id="DomainEventResultMap" type="DomainEvent">
+        <id property="id" column="id"/>
+        <result property="domainId" column="domain_id"/>
+        <result property="domainEntityId" column="domain_entity_id"/>
+        <result property="datasourceId" column="datasource_id"/>
+        <result property="careFields" column="care_fields"/>
+        <result property="eventName" column="event_name"/>
+        <result property="eventType" column="event_type"/>
+        <result property="conditionFieldName" column="condition_field_name"/>
+        <result property="conditionFieldValue" column="condition_field_value"/>
+        <result property="outputTopic" column="output_topic"/>
+        <result property="description" column="description"/>
+        <result property="entityIdNameMapTableField" column="entity_id_name_map_table_field"/>
+        <result property="gmtCreate" column="gmt_create"/>
+        <result property="gmtModifed" column="gmt_modifed"/>
+        <collection property="domainEventFilterSettingList" column="id"
+                    select="com.demo.mapper.DomainEventFilterSettingMapper.getByEventId"/>
+    </resultMap>
+
+    <select id="getAll" resultMap="DomainEventResultMap">
+        SELECT id, domain_id, domain_entity_id, datasource_id, care_fields, event_name, event_type,
+               condition_field_name, condition_field_value, output_topic, description,
+               entity_id_name_map_table_field, gmt_create, gmt_modifed
+        FROM domain_event
+    </select>
+
+    <insert id="add" parameterType="DomainEvent" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO domain_event (domain_id, domain_entity_id, datasource_id, care_fields, event_name, event_type,
+                                  condition_field_name, condition_field_value, output_topic, description,
+                                  entity_id_name_map_table_field, gmt_create, gmt_modifed)
+        VALUES (#{domainId}, #{domainEntityId}, #{datasourceId}, #{careFields}, #{eventName}, #{eventType},
+                #{conditionFieldName}, #{conditionFieldValue}, #{outputTopic}, #{description},
+                #{entityIdNameMapTableField}, #{gmtCreate}, #{gmtModifed})
+    </insert>
+
+    <select id="getById" parameterType="Long" resultMap="DomainEventResultMap">
+        SELECT id, domain_id, domain_entity_id, datasource_id, care_fields, event_name, event_type,
+               condition_field_name, condition_field_value, output_topic, description,
+               entity_id_name_map_table_field, gmt_create, gmt_modifed
+        FROM domain_event
+        WHERE id = #{id}
+    </select>
+
+    <delete id="delete" parameterType="Long">
+        DELETE FROM domain_event WHERE id = #{id}
+    </delete>
+
+    <select id="getByDatasourceId" parameterType="Long" resultMap="DomainEventResultMap">
+        SELECT id, domain_id, domain_entity_id, datasource_id, care_fields, event_name, event_type,
+               condition_field_name, condition_field_value, output_topic, description,
+               entity_id_name_map_table_field, gmt_create, gmt_modifed
+        FROM domain_event
+        WHERE datasource_id = #{datasourceId}
+    </select>
+
+</mapper>

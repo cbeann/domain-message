@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.demo.mapper.AdDomainMapper">
+
+    <select id="getAll" resultType="AdDomain">
+        SELECT id, name, description, gmt_create as gmtCreate, gmt_modifed as gmtModifed
+        FROM ad_domain
+    </select>
+
+    <insert id="add" parameterType="AdDomain">
+        INSERT INTO ad_domain (name, description, gmt_create, gmt_modifed)
+        VALUES (#{name}, #{description}, #{gmtCreate}, #{gmtModifed})
+    </insert>
+
+    <select id="getById" parameterType="Long" resultType="AdDomain">
+        SELECT id, name, description, gmt_create as gmtCreate, gmt_modifed as gmtModifed
+        FROM ad_domain
+        WHERE id = #{id}
+    </select>
+
+    <delete id="delete" parameterType="Long">
+        DELETE FROM ad_domain WHERE id = #{id}
+    </delete>
+
+</mapper>
