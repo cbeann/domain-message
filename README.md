@@ -246,7 +246,7 @@ src/main/
 在 `domain_message` 库的 `order` 表中新增一条记录，触发 `ORDER_NEW` 事件：
 
 ```sql
-INSERT INTO `order` (name, creator_id, order_status, product_id) VALUES ('测试订单', 1, 1, 150001);
+INSERT INTO `order` (name, creator_id, order_status, product_id) VALUES ('测试订单', 1, 1, 123456);
 ```
 
 ```shell
@@ -261,8 +261,8 @@ INSERT INTO `order` (name, creator_id, order_status, product_id) VALUES ('测试
     "msgKey": "7",
     "newData": {
         "order_status": "1",
-        "product_id": "1",
-        "name": "name7",
+        "product_id": "123456",
+        "name": "测试订单",
         "creator_id": "1",
         "id": "7"
     },
